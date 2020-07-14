@@ -74,7 +74,6 @@ module.exports = {
         path: `${__dirname}/src/pages/`,
       },
     },
-
     'gatsby-plugin-sitemap',
     {
       resolve: `gatsby-plugin-breadcrumb`,
@@ -110,5 +109,57 @@ module.exports = {
       },
     },
     'gatsby-plugin-twitter',
+    {
+      resolve: 'gatsby-plugin-feed',
+      options: {
+        query: `
+        {
+          site {
+            siteMetadata {
+              title
+              description
+              siteUrl
+            }
+          }
+        }
+        `,
+        feeds: [
+          {
+            serialize: ({ query: { site, allMdx } }) => {
+              return allMdx.edges.map((edge) => {
+                return Object.assign({}, edge.node.frontmatter, {
+                  description: edge.node.excerpt,
+                  date: edge.node.frontmatter.date,
+                  url: site.siteMetadata.siteUrl + edge.node.frontmatter.slug,
+                  guid: site.siteMetadata.siteUrl + edge.node.frontmatter.slug,
+                  custom_elements: [{ 'content:encoded': edge.node.html }],
+                })
+              })
+            },
+            query: `
+            {
+              allMdx(
+                sort: {order: DESC, fields: [frontmatter___date]},
+              ) {
+                edges {
+                  node {
+                    excerpt
+                    html
+                    frontmatter {
+                      title
+                      date
+                    }
+                  }
+                }
+              }
+            }
+            `,
+            output: '/rss.xml',
+            title: "D.S. Chapman's RSS Feed",
+            match: '^/articles/',
+          },
+        ],
+      },
+    },
   ],
 }
